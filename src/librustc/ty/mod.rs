@@ -2008,6 +2008,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
             hir::ExprBreak(..) |
             hir::ExprAgain(..) |
             hir::ExprRet(..) |
+            hir::ExprBecome(..) |
             hir::ExprWhile(..) |
             hir::ExprLoop(..) |
             hir::ExprAssign(..) |

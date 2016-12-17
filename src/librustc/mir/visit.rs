@@ -432,6 +432,14 @@ macro_rules! make_mir_visitor {
                         cleanup.map(|t| self.visit_branch(block, t));
                     }
 
+                    TerminatorKind::TailCall { ref $($mutability)* func,
+                                               ref $($mutability)* args } => {
+                        self.visit_operand(func, source_location);
+                        for arg in args {
+                            self.visit_operand(arg, source_location);
+                        }
+                    }
+
                     TerminatorKind::Assert { ref $($mutability)* cond,
                                              expected: _,
                                              ref $($mutability)* msg,

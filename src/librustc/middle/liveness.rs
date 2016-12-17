@@ -468,6 +468,7 @@ fn visit_expr<'a, 'tcx>(ir: &mut IrMaps<'a, 'tcx>, expr: &'tcx Expr) {
       hir::ExprTup(..) | hir::ExprBinary(..) | hir::ExprAddrOf(..) |
       hir::ExprCast(..) | hir::ExprUnary(..) | hir::ExprBreak(..) |
       hir::ExprAgain(_) | hir::ExprLit(_) | hir::ExprRet(..) |
+      hir::ExprBecome(..) |
       hir::ExprBlock(..) | hir::ExprAssign(..) | hir::ExprAssignOp(..) |
       hir::ExprStruct(..) | hir::ExprRepeat(..) |
       hir::ExprInlineAsm(..) | hir::ExprBox(..) |
@@ -1018,6 +1019,12 @@ impl<'a, 'tcx> Liveness<'a, 'tcx> {
             self.propagate_through_opt_expr(o_e.as_ref().map(|e| &**e), exit_ln)
           }
 
+          hir::ExprBecome(ref e) => {
+              // FIXME is this correct?
+              let exit_ln = self.s.exit_ln;
+              self.propagate_through_expr(e, exit_ln)
+          }
+
           hir::ExprBreak(opt_label, ref opt_expr) => {
               // Find which label this break jumps to
               let sc = self.find_loop_scope(opt_label, expr.span);
@@ -1423,8 +1430,8 @@ fn check_expr<'a, 'tcx>(this: &mut Liveness<'a, 'tcx>, expr: &'tcx Expr) {
       hir::ExprIndex(..) | hir::ExprField(..) | hir::ExprTupField(..) |
       hir::ExprArray(..) | hir::ExprTup(..) | hir::ExprBinary(..) |
       hir::ExprCast(..) | hir::ExprUnary(..) | hir::ExprRet(..) |
-      hir::ExprBreak(..) | hir::ExprAgain(..) | hir::ExprLit(_) |
-      hir::ExprBlock(..) | hir::ExprAddrOf(..) |
+      hir::ExprBecome(..) | hir::ExprBreak(..) | hir::ExprAgain(..) |
+      hir::ExprLit(_) | hir::ExprBlock(..) | hir::ExprAddrOf(..) |
       hir::ExprStruct(..) | hir::ExprRepeat(..) |
       hir::ExprClosure(..) | hir::ExprPath(_) |
       hir::ExprBox(..) | hir::ExprType(..) => {

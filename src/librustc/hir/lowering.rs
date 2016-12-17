@@ -1554,6 +1554,7 @@ impl<'a> LoweringContext<'a> {
                 }
                 ExprKind::Continue(opt_ident) => hir::ExprAgain(self.lower_label(e.id, opt_ident)),
                 ExprKind::Ret(ref e) => hir::ExprRet(e.as_ref().map(|x| P(self.lower_expr(x)))),
+                ExprKind::Become(ref e) => hir::ExprBecome(P(self.lower_expr(e))),
                 ExprKind::InlineAsm(ref asm) => {
                     let hir_asm = hir::InlineAsm {
                         inputs: asm.inputs.iter().map(|&(ref c, _)| c.clone()).collect(),

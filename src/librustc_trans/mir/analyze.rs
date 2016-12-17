@@ -203,6 +203,7 @@ pub fn cleanup_kinds<'a, 'tcx>(mir: &mir::Mir<'tcx>) -> IndexVec<mir::BasicBlock
                 TerminatorKind::Goto { .. } |
                 TerminatorKind::Resume |
                 TerminatorKind::Return |
+                TerminatorKind::TailCall { .. } |
                 TerminatorKind::Unreachable |
                 TerminatorKind::If { .. } |
                 TerminatorKind::Switch { .. } |

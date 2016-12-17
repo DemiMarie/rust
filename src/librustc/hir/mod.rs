@@ -975,6 +975,8 @@ pub enum Expr_ {
     ExprAgain(Option<Label>),
     /// A `return`, with an optional value to be returned
     ExprRet(Option<P<Expr>>),
+    /// A `become`, with an expression to be becomed
+    ExprBecome(P<Expr>),
 
     /// Inline assembly (from `asm!`), with its outputs and inputs.
     ExprInlineAsm(P<InlineAsm>, HirVec<Expr>, HirVec<Expr>),

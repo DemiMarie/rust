@@ -456,6 +456,7 @@ impl<'a, 'tcx> MoveDataBuilder<'a, 'tcx> {
         debug!("gather_terminator({:?}, {:?})", loc, term);
         match term.kind {
             TerminatorKind::Goto { target: _ } |
+            TerminatorKind::TailCall { func: _, args: _ } |
             TerminatorKind::Resume |
             TerminatorKind::Unreachable => { }
 

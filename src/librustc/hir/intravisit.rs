@@ -1018,6 +1018,9 @@ pub fn walk_expr<'v, V: Visitor<'v>>(visitor: &mut V, expression: &'v Expr) {
         ExprRet(ref optional_expression) => {
             walk_list!(visitor, visit_expr, optional_expression);
         }
+        ExprBecome(ref optional_expression) => {
+            walk_list!(visitor, visit_expr, Some(optional_expression))
+        }
         ExprInlineAsm(_, ref outputs, ref inputs) => {
             for output in outputs {
                 visitor.visit_expr(output)

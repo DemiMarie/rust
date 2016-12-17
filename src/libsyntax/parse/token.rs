@@ -272,7 +272,7 @@ impl Token {
     pub fn is_strict_keyword(&self) -> bool {
         match *self {
             Ident(id) => id.name >= keywords::As.name() &&
-                         id.name <= keywords::While.name(),
+                         id.name <= keywords::Become.name(),
             _ => false,
         }
     }

@@ -965,6 +965,8 @@ pub enum ExprKind {
     Continue(Option<SpannedIdent>),
     /// A `return`, with an optional value to be returned
     Ret(Option<P<Expr>>),
+    /// A `become`, with the expression to be becomed
+    Become(P<Expr>),
 
     /// Output of the `asm!()` macro
     InlineAsm(P<InlineAsm>),

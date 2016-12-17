@@ -112,6 +112,7 @@ impl<'a, 'gcx, 'tcx> Builder<'a, 'gcx, 'tcx> {
             ExprKind::Break { .. } |
             ExprKind::Continue { .. } |
             ExprKind::Return { .. } |
+            ExprKind::Become { .. } |
             ExprKind::Literal { .. } |
             ExprKind::InlineAsm { .. } |
             ExprKind::Call { .. } => {

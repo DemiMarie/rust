@@ -394,6 +394,11 @@ impl<'a, 'tcx> Qualifier<'a, 'tcx, 'tcx> {
                     return Qualif::empty();
                 }
 
+                // Neither can tail calls
+                TerminatorKind::TailCall { .. } => {
+                    return Qualif::empty();
+                }
+
                 TerminatorKind::If {..} |
                 TerminatorKind::Switch {..} |
                 TerminatorKind::SwitchInt {..} |

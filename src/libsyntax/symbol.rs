@@ -198,11 +198,11 @@ declare_keywords! {
     (34, Use,            "use")
     (35, Where,          "where")
     (36, While,          "while")
+    (37, Become,         "become")
 
     // Keywords reserved for future use.
-    (37, Abstract,       "abstract")
-    (38, Alignof,        "alignof")
-    (39, Become,         "become")
+    (38, Abstract,       "abstract")
+    (39, Alignof,        "alignof")
     (40, Do,             "do")
     (41, Final,          "final")
     (42, Macro,          "macro")

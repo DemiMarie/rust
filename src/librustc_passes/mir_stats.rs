@@ -157,6 +157,7 @@ impl<'a, 'tcx> mir_visit::Visitor<'tcx> for StatCollector<'a, 'tcx> {
             TerminatorKind::Drop { .. } => "TerminatorKind::Drop",
             TerminatorKind::DropAndReplace { .. } => "TerminatorKind::DropAndReplace",
             TerminatorKind::Call { .. } => "TerminatorKind::Call",
+            TerminatorKind::TailCall { .. } => "TerminatorKind::TailCall",
             TerminatorKind::Assert { .. } => "TerminatorKind::Assert",
         }, kind);
         self.super_terminator_kind(block, kind, location);

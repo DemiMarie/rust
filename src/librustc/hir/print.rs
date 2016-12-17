@@ -1370,6 +1370,10 @@ impl<'a> State<'a> {
                     _ => (),
                 }
             }
+            hir::ExprBecome(ref result) => {
+                word(&mut self.s, "become ")?;
+                self.print_expr(result)?;
+            }
             hir::ExprInlineAsm(ref a, ref outputs, ref inputs) => {
                 word(&mut self.s, "asm!")?;
                 self.popen()?;

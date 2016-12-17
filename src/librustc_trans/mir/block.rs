@@ -392,6 +392,8 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                 bug!("undesugared DropAndReplace in trans: {:?}", data);
             }
 
+            mir::TerminatorKind::TailCall { .. } => unimplemented!(),
+
             mir::TerminatorKind::Call { ref func, ref args, ref destination, ref cleanup } => {
                 // Create the callee. This is a fn ptr or zero-sized and hence a kind of scalar.
                 let callee = self.trans_operand(&bcx, func);

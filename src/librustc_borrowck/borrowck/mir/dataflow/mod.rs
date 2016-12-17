@@ -436,6 +436,7 @@ impl<'a, 'tcx: 'a, D> DataflowAnalysis<'a, 'tcx, D>
     {
         match bb_data.terminator().kind {
             mir::TerminatorKind::Return |
+            mir::TerminatorKind::TailCall { .. } |
             mir::TerminatorKind::Resume |
             mir::TerminatorKind::Unreachable => {}
             mir::TerminatorKind::Goto { ref target } |

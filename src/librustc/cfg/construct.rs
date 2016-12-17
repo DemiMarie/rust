@@ -294,6 +294,13 @@ impl<'a, 'tcx> CFGBuilder<'a, 'tcx> {
                 self.add_unreachable_node()
             }
 
+            hir::ExprBecome(ref v) => {
+                let v_exit = self.expr(v, pred);
+                let b = self.add_ast_node(expr.id, &[v_exit]);
+                self.add_returning_edge(expr, b);
+                self.add_unreachable_node()
+            }
+
             hir::ExprBreak(label, ref opt_expr) => {
                 let v = self.opt_expr(opt_expr, pred);
                 let loop_scope = self.find_scope(expr, label);

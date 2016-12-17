@@ -2261,6 +2261,15 @@ impl<'a> Parser<'a> {
                     } else {
                         ex = ExprKind::Ret(None);
                     }
+                } else if self.eat_keyword(keywords::Become) {
+                    // `become`
+                    if self.token.can_begin_expr() {
+                        let e = self.parse_expr()?;
+                        hi = e.span.hi;
+                        ex = ExprKind::Become(e);
+                    } else {
+                       return Err(self.fatal("expected expression after `become`"))
+                    }
                 } else if self.eat_keyword(keywords::Break) {
                     let lt = if self.token.is_lifetime() {
                         let spanned_lt = Spanned {

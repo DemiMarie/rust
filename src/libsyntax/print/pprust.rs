@@ -2212,6 +2212,10 @@ impl<'a> State<'a> {
                     _ => ()
                 }
             }
+            ast::ExprKind::Become(ref result) => {
+                try!(word(&mut self.s, "become "));
+                try!(self.print_expr(result));
+            }
             ast::ExprKind::InlineAsm(ref a) => {
                 word(&mut self.s, "asm!")?;
                 self.popen()?;

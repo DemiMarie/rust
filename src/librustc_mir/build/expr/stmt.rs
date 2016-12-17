@@ -117,6 +117,36 @@ impl<'a, 'gcx, 'tcx> Builder<'a, 'gcx, 'tcx> {
                 this.exit_scope(expr_span, extent, block, return_block);
                 this.cfg.start_new_block().unit()
             }
+            ExprKind::Become { value } => {
+                let value = this.hir.mirror(value);
+                let (_, fun, args) = match value.kind {
+                    ExprKind::Call { ty, fun, args } => (ty, fun, args),
+                    _ => span_bug!(expr_span,
+                                   "Can only `become` a call expression: `{:?}`", value)
+                };
+                let mut new_block = this.cfg.start_new_block();
+                {
+                let mut args_ = vec![];
+                for arg in args.into_iter() {
+                    let expr: Expr = this.hir.mirror(arg);
+                    let temp = this.temp(expr.ty.clone());
+                    let operand = unpack!(new_block = this.as_rvalue(new_block, expr));
+                    this.cfg.push_assign(new_block, source_info,
+                                         &temp, operand);
+                    args_.push(Operand::Consume(temp))
+                }
+                let args = args_;
+                let extent = this.extent_of_return_scope();
+                this.exit_scope(expr_span, extent, block, new_block);
+                let fun = this.hir.mirror(fun);
+                let fun = unpack!(new_block = this.as_operand(new_block, fun));
+                this.cfg.terminate(block, source_info, TerminatorKind::TailCall {
+                    func: fun,
+                    args: args,
+                });
+                new_block.unit()
+                }
+            }
             _ => {
                 let expr_ty = expr.ty;
                 let temp = this.temp(expr.ty.clone());

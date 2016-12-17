@@ -410,6 +410,8 @@ impl<'a, 'gcx, 'tcx> TypeChecker<'a, 'gcx, 'tcx> {
                 // no checks needed for these
             }
 
+            TerminatorKind::TailCall { .. } => unimplemented!(),
+
 
             TerminatorKind::DropAndReplace {
                 ref location,
@@ -621,6 +623,12 @@ impl<'a, 'gcx, 'tcx> TypeChecker<'a, 'gcx, 'tcx> {
                 if is_cleanup {
                     span_mirbug!(self, block, "return on cleanup block")
                 }
+            }
+            TerminatorKind::TailCall { .. } => {
+                if is_cleanup {
+                    span_mirbug!(self, block, "become on cleanup block")
+                }
+                unimplemented!()
             }
             TerminatorKind::Unreachable => {}
             TerminatorKind::Drop { target, unwind, .. } |

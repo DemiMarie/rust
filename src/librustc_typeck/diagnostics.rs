@@ -4122,6 +4122,29 @@ fn main() {
 ```
 "##,
 
+E0573: r##"
+A become statement was found outside of a function body.
+
+Erroneous code example:
+
+```compile_fail,E0572
+fn foo() -> u32 { 0 }
+const x: u32 = become foo(); // error: become statement outside of function body
+fn main () {}
+```
+
+To fix this issue, just remove the become keyword or move the expression into a
+function. Example:
+
+```
+fn some_fn() { }
+
+fn main() {
+    become some_fn();
+}
+```
+"##,
+
 }
 
 register_diagnostics! {

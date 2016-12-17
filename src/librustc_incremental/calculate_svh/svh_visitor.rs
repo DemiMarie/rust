@@ -265,6 +265,7 @@ enum SawExprComponent<'a> {
     SawExprPath,
     SawExprAddrOf(hir::Mutability),
     SawExprRet,
+    SawExprBecome,
     SawExprInlineAsm(StableInlineAsm<'a>),
     SawExprStruct,
     SawExprRepeat,
@@ -341,7 +342,12 @@ fn saw_expr<'a>(node: &'a Expr_,
         ExprBreak(label, _)      => (SawExprBreak(label.map(|l| l.name.as_str())), false),
         ExprAgain(label)         => (SawExprAgain(label.map(|l| l.name.as_str())), false),
         ExprRet(..)              => (SawExprRet, false),
+<<<<<<< 82801b552ee8a683c40eb9fce5b892e649794648
         ExprInlineAsm(ref a,..)  => (SawExprInlineAsm(StableInlineAsm(a)), false),
+=======
+        ExprBecome(..)           => (SawExprBecome, false),
+        ExprInlineAsm(ref a,..)  => (SawExprInlineAsm(a), false),
+>>>>>>> Front-end support for `become`
         ExprStruct(..)           => (SawExprStruct, false),
         ExprRepeat(..)           => (SawExprRepeat, false),
     }

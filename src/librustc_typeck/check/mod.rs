@@ -3689,26 +3689,37 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
           }
           hir::ExprAgain(_) => { tcx.types.never }
           hir::ExprRet(ref expr_opt) => {
-            if self.ret_ty.is_none() {
-                struct_span_err!(self.tcx.sess, expr.span, E0572,
-                                 "return statement outside of function body").emit();
-            } else if let Some(ref e) = *expr_opt {
-                self.check_expr_coercable_to_type(&e, self.ret_ty.unwrap());
-            } else {
-                match self.eq_types(false,
-                                    &self.misc(expr.span),
-                                    self.ret_ty.unwrap(),
-                                    tcx.mk_nil()) {
-                    Ok(ok) => self.register_infer_ok_obligations(ok),
-                    Err(_) => {
-                        struct_span_err!(tcx.sess, expr.span, E0069,
-                                         "`return;` in a function whose return type is not `()`")
-                            .span_label(expr.span, &format!("return type is not ()"))
-                            .emit();
+            if let Some(ret_ty) = self.ret_ty {
+                if let Some(ref e) = *expr_opt {
+                    self.check_expr_coercable_to_type(&e, ret_ty);
+                } else {
+                    match self.eq_types(false,
+                                        &self.misc(expr.span),
+                                        ret_ty,
+                                        tcx.mk_nil()) {
+                        Ok(ok) => self.register_infer_ok_obligations(ok),
+                        Err(_) => {
+                            struct_span_err!(tcx.sess, expr.span, E0069,
+                                             "`return;` in a function whose return type is not `()`")
+                                .span_label(expr.span, &format!("return type is not ()"))
+                                .emit();
+                        }
                     }
                 }
+            } else {
+                struct_span_err!(self.tcx.sess, expr.span, E0572,
+                                 "return statement outside of function body").emit()
             }
             tcx.types.never
+          }
+          hir::ExprBecome(ref expr) => {
+              if let Some(ret_ty) = self.ret_ty {
+                  self.check_expr_eq_type(expr, ret_ty);
+              } else {
+                  struct_span_err!(self.tcx.sess, expr.span, E0573,
+                                   "become statement outside of function body").emit()
+              }
+              tcx.types.never
           }
           hir::ExprAssign(ref lhs, ref rhs) => {
             let lhs_ty = self.check_expr_with_lvalue_pref(&lhs, PreferMutLvalue);
