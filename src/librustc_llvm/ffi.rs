@@ -690,6 +690,7 @@ extern "C" {
                                        Name: *const c_char,
                                        FunctionTy: TypeRef)
                                        -> ValueRef;
+    pub fn LLVMRustSetTailCall(Fn: ValueRef);
     pub fn LLVMSetFunctionCallConv(Fn: ValueRef, CC: c_uint);
     pub fn LLVMRustAddDereferenceableAttr(Fn: ValueRef, index: c_uint, bytes: u64);
     pub fn LLVMRustAddFunctionAttribute(Fn: ValueRef, index: c_uint, attr: Attribute);

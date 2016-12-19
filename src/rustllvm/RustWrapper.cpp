@@ -162,6 +162,11 @@ extern "C" void LLVMRustAddCallSiteAttribute(LLVMValueRef Instr, unsigned Index,
       AttributeSet::get(Call->getContext(), Index, B)));
 }
 
+extern "C" void LLVMRustSetTailCall(LLVMValueRef Instr) {
+  CallInst *Call = cast<CallInst>(unwrap<Instruction>(Instr));
+  Call->setTailCall();
+}
+
 extern "C" void LLVMRustAddDereferenceableCallSiteAttr(LLVMValueRef Instr,
                                                        unsigned Index,
                                                        uint64_t Bytes) {

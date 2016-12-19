@@ -8,7 +8,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-/*
+/*!
 
 # check.rs
 
@@ -3717,7 +3717,17 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                   self.check_expr_eq_type(expr, ret_ty);
               } else {
                   struct_span_err!(self.tcx.sess, expr.span, E0573,
-                                   "become statement outside of function body").emit()
+                                   "become statement outside of \
+                                   function body").emit()
+              }
+
+              match expr.node {
+                  hir::ExprCall(..) | hir::ExprMethodCall(..) => (),
+                  _ => {
+                      struct_span_err!(self.tcx.sess, expr.span, E0574,
+                                       "become to something other than a \
+                                       method or function call").emit()
+                  }
               }
               tcx.types.never
           }

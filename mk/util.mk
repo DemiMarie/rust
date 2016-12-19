@@ -17,7 +17,7 @@ else
 endif
 
 print-%:
-	@echo $*=$($*)
+	@printf %s\\n '$(subst ','\'',$*)=$(subst ','\'',$($*))'
 
 S := $(CFG_SRC_DIR)
 SREL := $(CFG_SRC_DIR_RELATIVE)

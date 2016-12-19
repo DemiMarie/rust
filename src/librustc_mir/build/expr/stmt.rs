@@ -12,8 +12,61 @@ use build::{BlockAnd, BlockAndExtension, Builder};
 use build::scope::LoopScope;
 use hair::*;
 use rustc::mir::*;
+use std::io::{stdout, Write};
 
 impl<'a, 'gcx, 'tcx> Builder<'a, 'gcx, 'tcx> {
+    fn build_become(&mut self, mut block: BasicBlock, value: ExprRef<'tcx>,
+                    source_info: SourceInfo) -> BlockAnd<()> {
+        let this = self;
+        let expr = this.hir.mirror(value);
+
+        // Find the actual call site
+        let (_, fun, args) = match expr.kind {
+            ExprKind::Call { ty, fun, args } => (ty, fun, args),
+            ExprKind::Scope { extent, value } => {
+                return this.in_scope(extent, block, |this|
+                                     this.build_become(block, value, source_info))
+            }
+            // Impossible – would not typecheck
+            _ => span_bug!(expr.span,
+                           "Can only `become` a call expression \
+                           (this should have been detected earlier): `{:?}`",
+                           expr),
+        };
+        let mut args_ = vec![];
+
+        // Move each argument to the function into a separate temp variable
+        // for which no drop is scheduled.
+        let fun = this.hir.mirror(fun);
+        let fun = unpack!(block = this.as_operand(block, fun));
+
+        for arg in args.into_iter() {
+            let expr: Expr = this.hir.mirror(arg);
+            let temp = this.temp(expr.ty.clone());
+            let operand = unpack!(block = this.as_rvalue(block, expr));
+            this.cfg.push_assign(block, source_info, &temp, operand);
+            args_.push(Operand::Consume(temp))
+        }
+        // Drop everything in the current function EXCEPT the temp variables
+        // created above
+        let extent = this.extent_of_return_scope();
+        let new_block = this.cfg.start_new_block();
+
+        println!("Made it to exit_scope");
+        let _ = stdout().flush();
+        // Branches into `new_block`!
+        this.exit_scope(expr.span, extent, block, new_block);
+
+        println!("Made it to terminate");
+        let _ = stdout().flush();
+        this.cfg.terminate(new_block, source_info, TerminatorKind::TailCall {
+            func: fun,
+            args: args_,
+        });
+        println!("Made it to start_new_block");
+        let _ = stdout().flush();
+        this.cfg.start_new_block().unit()
+    }
 
     pub fn stmt_expr(&mut self, mut block: BasicBlock, expr: Expr<'tcx>) -> BlockAnd<()> {
         let this = self;
@@ -117,36 +170,8 @@ impl<'a, 'gcx, 'tcx> Builder<'a, 'gcx, 'tcx> {
                 this.exit_scope(expr_span, extent, block, return_block);
                 this.cfg.start_new_block().unit()
             }
-            ExprKind::Become { value } => {
-                let value = this.hir.mirror(value);
-                let (_, fun, args) = match value.kind {
-                    ExprKind::Call { ty, fun, args } => (ty, fun, args),
-                    _ => span_bug!(expr_span,
-                                   "Can only `become` a call expression: `{:?}`", value)
-                };
-                let mut new_block = this.cfg.start_new_block();
-                {
-                let mut args_ = vec![];
-                for arg in args.into_iter() {
-                    let expr: Expr = this.hir.mirror(arg);
-                    let temp = this.temp(expr.ty.clone());
-                    let operand = unpack!(new_block = this.as_rvalue(new_block, expr));
-                    this.cfg.push_assign(new_block, source_info,
-                                         &temp, operand);
-                    args_.push(Operand::Consume(temp))
-                }
-                let args = args_;
-                let extent = this.extent_of_return_scope();
-                this.exit_scope(expr_span, extent, block, new_block);
-                let fun = this.hir.mirror(fun);
-                let fun = unpack!(new_block = this.as_operand(new_block, fun));
-                this.cfg.terminate(block, source_info, TerminatorKind::TailCall {
-                    func: fun,
-                    args: args,
-                });
-                new_block.unit()
-                }
-            }
+            ExprKind::Become { value } =>
+                return this.build_become(block, value, source_info),
             _ => {
                 let expr_ty = expr.ty;
                 let temp = this.temp(expr.ty.clone());

@@ -48,7 +48,7 @@ impl<'a, 'gcx, 'tcx> Builder<'a, 'gcx, 'tcx> {
             ExprKind::NeverToAny { source } => {
                 let source = this.hir.mirror(source);
                 let is_call = match source.kind {
-                    ExprKind::Call { .. } => true,
+                    ExprKind::Call { .. } | ExprKind::Become { .. } => true,
                     _ => false,
                 };
 
@@ -232,30 +232,7 @@ impl<'a, 'gcx, 'tcx> Builder<'a, 'gcx, 'tcx> {
                 });
                 success.unit()
             }
-            /*
-            ExprKind::Become { value } => {
-                let val = value.make_mirror();
-                let (ty, fun, args) = match val.kind {
-                    ExprKind::Call { ty, fun, args } => (ty, fun, args),
-                    _ => span_bug!(expr_span,
-                                   "Can only `become` a call expression: `{:?}`", val)
-                };
-                let return_block = this.return_block();
-                let args = args.into_iter()
-                    .map(|arg| {
-                        let temp = self.as_operand(return_block, arg);
-                        self.cfg.push_assign(temp, arg)
-                    }).collect();
-                let fun = self.as_operand(return_block, fun);
-                let extent = this.extent_of_return_scope();
-                this.exit_scope(expr_span, extent, block, return_block);
-                this.cfg.terminate(block, source_info, TerminatorKind::TailCall {
-                    func: fun,
-                    args: args,
-                });
-                this.cfg.start_new_block().unit()
-            }
-*/
+
             // These cases don't actually need a destination
             ExprKind::Assign { .. } |
             ExprKind::AssignOp { .. } |

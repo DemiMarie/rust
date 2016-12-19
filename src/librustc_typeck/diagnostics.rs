@@ -4127,7 +4127,7 @@ A become statement was found outside of a function body.
 
 Erroneous code example:
 
-```compile_fail,E0572
+```compile_fail,E0573
 fn foo() -> u32 { 0 }
 const x: u32 = become foo(); // error: become statement outside of function body
 fn main () {}
@@ -4145,7 +4145,33 @@ fn main() {
 ```
 "##,
 
+E0574: r##"
+A `become` statement with an invalid target was detected.  Only
+function and method calls and invocations of overloaded operators
+can be the argument of `become`.
+
+Erroneous code example:
+
+```compile_fail,E0574
+fn main() {
+    become ()
 }
+```
+
+To fix this, ensure that the argument to `become` is a function or
+method invocation or an invocation of an overloaded operator.
+
+```
+fn target() { }
+
+fn main() {
+    become target()
+}
+```
+"##,
+
+}
+
 
 register_diagnostics! {
 //  E0068,

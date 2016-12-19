@@ -12,6 +12,7 @@
 import sys
 import os
 dir = os.path.dirname(__file__)
+os.chdir(dir)
 sys.path.append(os.path.abspath(os.path.join(dir, "src", "bootstrap")))
 
 import bootstrap
