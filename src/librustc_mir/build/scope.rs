@@ -792,6 +792,7 @@ fn build_free<'a, 'gcx, 'tcx>(tcx: TyCtxt<'a, 'gcx, 'tcx>,
         }),
         args: vec![Operand::Consume(data.value.clone())],
         destination: Some((unit_temp.clone(), target)),
-        cleanup: None
+        cleanup: None,
+        must_tail: false,
     }
 }

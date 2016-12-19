@@ -228,7 +228,8 @@ impl<'a, 'gcx, 'tcx> Builder<'a, 'gcx, 'tcx> {
                         None
                     } else {
                         Some ((destination.clone(), success))
-                    }
+                    },
+                    must_tail: false,
                 });
                 success.unit()
             }

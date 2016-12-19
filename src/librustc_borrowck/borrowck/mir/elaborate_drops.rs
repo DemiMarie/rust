@@ -878,7 +878,8 @@ impl<'b, 'tcx> ElaborateDropsCtxt<'b, 'tcx> {
                     }),
                     args: vec![Operand::Consume(c.lvalue.clone())],
                     destination: Some((unit_temp, target)),
-                    cleanup: None
+                    cleanup: None,
+                    must_tail: false,
                 }
             }),
             is_cleanup: is_cleanup

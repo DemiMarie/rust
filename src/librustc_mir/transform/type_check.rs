@@ -405,7 +405,6 @@ impl<'a, 'gcx, 'tcx> TypeChecker<'a, 'gcx, 'tcx> {
             TerminatorKind::Goto { .. } |
             TerminatorKind::Resume |
             TerminatorKind::Return |
-            TerminatorKind::TailCall { .. } |
             TerminatorKind::Unreachable |
             TerminatorKind::Drop { .. } => {
                 // no checks needed for these
@@ -622,11 +621,6 @@ impl<'a, 'gcx, 'tcx> TypeChecker<'a, 'gcx, 'tcx> {
                     span_mirbug!(self, block, "return on cleanup block")
                 }
             }
-            TerminatorKind::TailCall { .. } => {
-                if is_cleanup {
-                    span_mirbug!(self, block, "become on cleanup block")
-                }
-            }
             TerminatorKind::Unreachable => {}
             TerminatorKind::Drop { target, unwind, .. } |
             TerminatorKind::DropAndReplace { target, unwind, .. } |
@@ -639,7 +633,10 @@ impl<'a, 'gcx, 'tcx> TypeChecker<'a, 'gcx, 'tcx> {
                     self.assert_iscleanup(mir, block, unwind, true);
                 }
             }
-            TerminatorKind::Call { ref destination, cleanup, .. } => {
+            TerminatorKind::Call { ref destination, cleanup, must_tail, .. } => {
+                if must_tail && cleanup.is_some() {
+                    span_mirbug!(self, block, "cleanup present for tail call")
+                }
                 if let &Some((_, target)) = destination {
                     self.assert_iscleanup(mir, block, target, is_cleanup);
                 }

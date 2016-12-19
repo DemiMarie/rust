@@ -456,7 +456,6 @@ impl<'a, 'tcx> MoveDataBuilder<'a, 'tcx> {
         debug!("gather_terminator({:?}, {:?})", loc, term);
         match term.kind {
             TerminatorKind::Goto { target: _ } |
-            TerminatorKind::TailCall { func: _, args: _ } |
             TerminatorKind::Resume |
             TerminatorKind::Unreachable => { }
 
@@ -478,7 +477,7 @@ impl<'a, 'tcx> MoveDataBuilder<'a, 'tcx> {
                 self.create_move_path(location);
                 self.gather_operand(loc, value);
             }
-            TerminatorKind::Call { ref func, ref args, ref destination, cleanup: _ } => {
+            TerminatorKind::Call { ref func, ref args, ref destination, .. } => {
                 self.gather_operand(loc, func);
                 for arg in args {
                     self.gather_operand(loc, arg);

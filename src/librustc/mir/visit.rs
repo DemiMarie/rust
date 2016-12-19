@@ -420,7 +420,7 @@ macro_rules! make_mir_visitor {
                     TerminatorKind::Call { ref $($mutability)* func,
                                            ref $($mutability)* args,
                                            ref $($mutability)* destination,
-                                           cleanup } => {
+                                           cleanup, must_tail: _ } => {
                         self.visit_operand(func, source_location);
                         for arg in args {
                             self.visit_operand(arg, source_location);
@@ -430,14 +430,6 @@ macro_rules! make_mir_visitor {
                             self.visit_branch(block, target);
                         }
                         cleanup.map(|t| self.visit_branch(block, t));
-                    }
-
-                    TerminatorKind::TailCall { ref $($mutability)* func,
-                                               ref $($mutability)* args } => {
-                        self.visit_operand(func, source_location);
-                        for arg in args {
-                            self.visit_operand(arg, source_location);
-                        }
                     }
 
                     TerminatorKind::Assert { ref $($mutability)* cond,

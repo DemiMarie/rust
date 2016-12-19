@@ -11,6 +11,7 @@
 use build::{BlockAnd, BlockAndExtension, Builder};
 use build::scope::LoopScope;
 use hair::*;
+use rustc::ty;
 use rustc::mir::*;
 use std::io::{stdout, Write};
 
@@ -19,9 +20,8 @@ impl<'a, 'gcx, 'tcx> Builder<'a, 'gcx, 'tcx> {
                     source_info: SourceInfo) -> BlockAnd<()> {
         let this = self;
         let expr = this.hir.mirror(value);
-
         // Find the actual call site
-        let (_, fun, args) = match expr.kind {
+        let (ty, fun, args) = match expr.kind {
             ExprKind::Call { ty, fun, args } => (ty, fun, args),
             ExprKind::Scope { extent, value } => {
                 return this.in_scope(extent, block, |this|
@@ -33,6 +33,16 @@ impl<'a, 'gcx, 'tcx> Builder<'a, 'gcx, 'tcx> {
                            (this should have been detected earlier): `{:?}`",
                            expr),
         };
+
+        // FIXME(DemiMarie) merge this with identical code in into.rs
+        let diverges = match ty.sty {
+            ty::TyFnDef(_, _, ref f) | ty::TyFnPtr(ref f) => {
+                // FIXME(canndrew): This is_never should probably be an is_uninhabited
+                f.sig.skip_binder().output().is_never()
+            }
+            _ => false
+        };
+
         let mut args_ = vec![];
 
         // Move each argument to the function into a separate temp variable
@@ -52,19 +62,21 @@ impl<'a, 'gcx, 'tcx> Builder<'a, 'gcx, 'tcx> {
         let extent = this.extent_of_return_scope();
         let new_block = this.cfg.start_new_block();
 
-        println!("Made it to exit_scope");
-        let _ = stdout().flush();
         // Branches into `new_block`!
         this.exit_scope(expr.span, extent, block, new_block);
 
-        println!("Made it to terminate");
-        let _ = stdout().flush();
-        this.cfg.terminate(new_block, source_info, TerminatorKind::TailCall {
+        let return_block = this.return_block();
+        this.cfg.terminate(new_block, source_info, TerminatorKind::Call {
             func: fun,
             args: args_,
+            destination: if diverges {
+                None
+            } else {
+                Some((Lvalue::Local(RETURN_POINTER), return_block))
+            },
+            cleanup: None,
+            must_tail: true,
         });
-        println!("Made it to start_new_block");
-        let _ = stdout().flush();
         this.cfg.start_new_block().unit()
     }
 

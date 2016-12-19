@@ -436,7 +436,6 @@ impl<'a, 'tcx: 'a, D> DataflowAnalysis<'a, 'tcx, D>
     {
         match bb_data.terminator().kind {
             mir::TerminatorKind::Return |
-            mir::TerminatorKind::TailCall { .. } |
             mir::TerminatorKind::Resume |
             mir::TerminatorKind::Unreachable => {}
             mir::TerminatorKind::Goto { ref target } |
@@ -465,7 +464,7 @@ impl<'a, 'tcx: 'a, D> DataflowAnalysis<'a, 'tcx, D>
                     self.propagate_bits_into_entry_set_for(in_out, changed, target);
                 }
             }
-            mir::TerminatorKind::Call { ref cleanup, ref destination, func: _, args: _ } => {
+            mir::TerminatorKind::Call { ref cleanup, ref destination, func: _, args: _, must_tail: _ } => {
                 if let Some(ref unwind) = *cleanup {
                     self.propagate_bits_into_entry_set_for(in_out, changed, unwind);
                 }

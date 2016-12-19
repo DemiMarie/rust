@@ -323,7 +323,10 @@ impl<'a, 'tcx> MirConstContext<'a, 'tcx> {
                     target
                 }
 
-                mir::TerminatorKind::Call { ref func, ref args, ref destination, .. } => {
+                mir::TerminatorKind::Call { ref func, ref args, ref destination, must_tail, .. } => {
+                    if must_tail {
+                        span_bug!(span, "tail call in constant")
+                    }
                     let fn_ty = func.ty(self.mir, tcx);
                     let fn_ty = self.monomorphize(&fn_ty);
                     let instance = match fn_ty.sty {

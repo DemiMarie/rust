@@ -308,6 +308,7 @@ impl<'a, 'gcx, 'tcx> Builder<'a, 'gcx, 'tcx> {
                         args: vec![val, expect],
                         destination: Some((eq_result.clone(), eq_block)),
                         cleanup: cleanup,
+                        must_tail: false,
                     });
 
                     // check the result

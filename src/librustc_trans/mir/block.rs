@@ -41,10 +41,6 @@ use super::lvalue::LvalueRef;
 use super::operand::OperandRef;
 use super::operand::OperandValue::{Pair, Ref, Immediate};
 
-const NO_DESTINATION: &'static Option<(mir::Lvalue<'static>, mir::BasicBlock)> =
-  &None;
-const NO_CLEANUP: &'static Option<mir::BasicBlock> = &None;
-
 impl<'a, 'tcx> MirContext<'a, 'tcx> {
     pub fn trans_block(&mut self, bb: mir::BasicBlock,
         funclets: &IndexVec<mir::BasicBlock, Option<Funclet>>) {
@@ -396,22 +392,10 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                 bug!("undesugared DropAndReplace in trans: {:?}", data);
             }
 
-            ref term @ mir::TerminatorKind::Call { .. } |
-            ref term @ mir::TerminatorKind::TailCall { .. } => {
-                let (func, args, destination, cleanup, is_tail) = match term {
-                    &mir::TerminatorKind::Call {
-                        ref func, ref args,
-                        ref destination, ref cleanup } =>
-                            (func, args, destination, cleanup, false),
-                    &mir::TerminatorKind::TailCall { ref func, ref args } =>
-                        (func, args, NO_DESTINATION, NO_CLEANUP, true),
-                    _ => unreachable!(),
-                };
+            mir::TerminatorKind::Call { ref func, ref args, ref destination,
+                                        ref cleanup, must_tail } => {
                 // Create the callee. This is a fn ptr or zero-sized and hence a kind of scalar.
                 let callee = self.trans_operand(&bcx, func);
-                if is_tail {
-                    bug!("Transing tail call");
-                }
 
                 let (mut callee, abi, sig) = match callee.ty.sty {
                     ty::TyFnDef(def_id, substs, f) => {
@@ -437,7 +421,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                 };
                 let mut intrinsic = intrinsic.as_ref().map(|s| &s[..]);
 
-                if intrinsic.is_some() && is_tail {
+                if intrinsic.is_some() && must_tail {
                     bug!("Cannot tail call an intrinsic!")
                 }
                 if intrinsic == Some("move_val_init") {
@@ -545,7 +529,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
 
                 let fn_ptr = match callee.data {
                     NamedTupleConstructor(_) => {
-                        if is_tail {
+                        if must_tail {
                             bug!("Cannot tail call a constructor!")
                         }
                         // FIXME translate this like mir::Rvalue::Aggregate.
@@ -593,7 +577,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
 
                 // Many different ways to call a function handled here
                 if let &Some(cleanup) = cleanup {
-                    debug_assert!(!is_tail, "Tail call cannot have cleanup");
+                    debug_assert!(!must_tail, "Tail call cannot have cleanup");
                     let ret_bcx = if let Some((_, target)) = *destination {
                         self.blocks[target]
                     } else {
@@ -618,8 +602,12 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                 } else {
                     let llret = bcx.call(fn_ptr, &llargs, cleanup_bundle);
                     fn_ty.apply_attrs_callsite(llret);
+                    if must_tail {
+                        unsafe {
+                            llvm::LLVMRustSetTailCall(llret)
+                        }
+                    }
                     if let Some((_, target)) = *destination {
-                        debug_assert!(!is_tail, "Tail call cannot have destination");
                         let op = OperandRef {
                             val: Immediate(llret),
                             ty: sig.output(),
@@ -627,11 +615,6 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                         self.store_return(&bcx, ret_dest, fn_ty.ret, op);
                         funclet_br(self, bcx, target);
                     } else {
-                        if is_tail {
-                            unsafe {
-                                llvm::LLVMRustSetTailCall(llret)
-                            }
-                        }
                         bcx.unreachable();
                     }
                 }

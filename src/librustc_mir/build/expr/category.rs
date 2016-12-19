@@ -57,7 +57,8 @@ impl Category {
             ExprKind::If { .. } |
             ExprKind::Match { .. } |
             ExprKind::NeverToAny { .. } |
-            ExprKind::Call { .. } =>
+            ExprKind::Call { .. } |
+            ExprKind::Become { .. } =>
                 Some(Category::Rvalue(RvalueFunc::Into)),
 
             ExprKind::Array { .. } |
@@ -86,8 +87,7 @@ impl Category {
             ExprKind::Block { .. } |
             ExprKind::Break { .. } |
             ExprKind::Continue { .. } |
-            ExprKind::Return { .. } |
-            ExprKind::Become { .. } =>
+            ExprKind::Return { .. } =>
                 // FIXME(#27840) these probably want their own
                 // category, like "nonterminating"
                 Some(Category::Rvalue(RvalueFunc::Into)),

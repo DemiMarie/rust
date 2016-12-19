@@ -521,15 +521,9 @@ pub enum TerminatorKind<'tcx> {
         /// Destination for the return value. If some, the call is converging.
         destination: Option<(Lvalue<'tcx>, BasicBlock)>,
         /// Cleanups to be done if the call unwinds.
-        cleanup: Option<BasicBlock>
-    },
-
-    /// Block ends with a tail-call
-    TailCall {
-        /// The function that is being called
-        func: Operand<'tcx>,
-        /// Arguments the function is called with
-        args: Vec<Operand<'tcx>>,
+        cleanup: Option<BasicBlock>,
+        /// Is this a tail call?
+        must_tail: bool,
     },
 
     /// Jump to the target if the condition has the expected value,
@@ -569,7 +563,6 @@ impl<'tcx> TerminatorKind<'tcx> {
                 slice::ref_slice(t).into_cow(),
             Call { destination: None, cleanup: Some(ref c), .. } => slice::ref_slice(c).into_cow(),
             Call { destination: None, cleanup: None, .. } => (&[]).into_cow(),
-            TailCall { .. } => (&[]).into_cow(),
             DropAndReplace { target, unwind: Some(unwind), .. } |
             Drop { target, unwind: Some(unwind), .. } => {
                 vec![target, unwind].into_cow()
@@ -599,7 +592,6 @@ impl<'tcx> TerminatorKind<'tcx> {
             Call { destination: Some((_, ref mut t)), cleanup: None, .. } => vec![t],
             Call { destination: None, cleanup: Some(ref mut c), .. } => vec![c],
             Call { destination: None, cleanup: None, .. } => vec![],
-            TailCall { .. } => vec![],
             DropAndReplace { ref mut target, unwind: Some(ref mut unwind), .. } |
             Drop { ref mut target, unwind: Some(ref mut unwind), .. } => vec![target, unwind],
             DropAndReplace { ref mut target, unwind: None, .. } |
@@ -691,16 +683,6 @@ impl<'tcx> TerminatorKind<'tcx> {
                 }
                 write!(fmt, ")")
             }
-            TailCall { ref func, ref args } => {
-                write!(fmt, "{:?}(", func)?;
-                for (index, arg) in args.iter().enumerate() {
-                    if index > 0 {
-                        write!(fmt, ", ")?;
-                    }
-                    write!(fmt, "{:?}", arg)?;
-                }
-                write!(fmt, ")")
-            }
             Assert { ref cond, expected, ref msg, .. } => {
                 write!(fmt, "assert(")?;
                 if !expected {
@@ -752,7 +734,6 @@ impl<'tcx> TerminatorKind<'tcx> {
             Call { destination: Some(_), cleanup: None, .. } => vec!["return".into_cow()],
             Call { destination: None, cleanup: Some(_), .. } => vec!["unwind".into_cow()],
             Call { destination: None, cleanup: None, .. } => vec![],
-            TailCall { .. } => vec![],
             DropAndReplace { unwind: None, .. } |
             Drop { unwind: None, .. } => vec!["return".into_cow()],
             DropAndReplace { unwind: Some(_), .. } |
