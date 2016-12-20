@@ -13,7 +13,6 @@ use build::scope::LoopScope;
 use hair::*;
 use rustc::ty;
 use rustc::mir::*;
-use std::io::{stdout, Write};
 
 impl<'a, 'gcx, 'tcx> Builder<'a, 'gcx, 'tcx> {
     fn build_become(&mut self, mut block: BasicBlock, value: ExprRef<'tcx>,

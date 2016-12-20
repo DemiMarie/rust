@@ -603,10 +603,36 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                     let llret = bcx.call(fn_ptr, &llargs, cleanup_bundle);
                     fn_ty.apply_attrs_callsite(llret);
                     if must_tail {
+                        // HACK HACK: this should really be expressed in MIR, but MIR does
+                        // not have a way to express the constraint that a tail call must
+                        // end a function
+                        destination.as_ref().map(|x| {
+                            if let &(mir::Lvalue::Local(mir::RETURN_POINTER), bb) = x {
+                                let ref bbdata = self.mir[bb];
+                                assert!(bbdata.statements.len() == 0);
+                                match bbdata.terminator {
+                                    Some(mir::Terminator {
+                                        kind: mir::TerminatorKind::Return,
+                                        ..
+                                    }) => (),
+                                    ref q => bug!("Bad terminator for return block: {:?}", q)
+                                }
+                            } else {
+                                bug!("Bad destination for tail call!")
+                            }
+                        });
                         unsafe {
-                            llvm::LLVMRustSetTailCall(llret)
+                            llvm::LLVMRustSetTailCall(llret);
                         }
+                        let ret = bcx.fcx().fn_ty.ret;
+                        if ret.is_ignore() || ret.is_indirect() {
+                            bcx.ret_void()
+                        } else {
+                            bcx.ret(llret)
+                        }
+                        return
                     }
+
                     if let Some((_, target)) = *destination {
                         let op = OperandRef {
                             val: Immediate(llret),
