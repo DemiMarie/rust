@@ -4148,7 +4148,9 @@ fn main() {
 E0574: r##"
 A `become` statement with an invalid target was detected.  Only
 function and method calls and invocations of overloaded operators
-can be the argument of `become`.
+can be the argument of `become`.  The function or method must use
+the Rust ABI, and cannot be a constructor of a tuple struct or tuple
+enum variant.
 
 Erroneous code example:
 
@@ -4159,7 +4161,9 @@ fn main() {
 ```
 
 To fix this, ensure that the argument to `become` is a function or
-method invocation or an invocation of an overloaded operator.
+method invocation or an invocation of an overloaded operator, that
+that the target has the Rust ABI, and that the target is not a
+tuple struct or tuple enum variant constructor.
 
 ```
 fn target() { }
@@ -4170,8 +4174,76 @@ fn main() {
 ```
 "##,
 
+E0575: r##"
+A function or method cannot be tail-called unless it uses the Rust ABI.
+Other ABIs do not support tail-calls from Rust code.
+
+Erroneous code example:
+
+```compile-fail,E0575
+extern "C" fn target() { }
+
+fn main() {
+    unsafe {
+        become target()
+    }
+}
+```
+
+To fix this, use the Rust ABI on the target function:
+
+```
+fn target () { }
+
+fn main() {
+    become target()
+}
+```
+
+or change the tail call to a normal call:
+
+```
+extern "C" fn target () { }
+
+fn main() {
+    unsafe {
+        target()
+    }
+}
+```
+"##,
+
+E0576: r##"
+Cannot tail-call a tuple struct or tuple enum variant constructor.
+
+The constructor of a tuple struct or tuple enum variant can be used as
+a function.  However, it cannot be tail-called.
+
+```compile-fail,E0576
+fn bad() -> Option<()> {
+    become Some(())
 }
 
+fn main() {
+    bad();
+}
+```
+
+To fix this, simply replace `become` with `return`.  A struct or enum
+variant does not make any function calls, so there is no point in
+tail-calling one.
+
+```
+fn good() -> Option<()> {
+    return Some(())
+}
+
+fn main() {
+    good()
+}
+```
+"##,
+}
 
 register_diagnostics! {
 //  E0068,

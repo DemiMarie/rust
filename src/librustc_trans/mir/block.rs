@@ -624,7 +624,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                         unsafe {
                             llvm::LLVMRustSetTailCall(llret);
                         }
-                        let ret = bcx.fcx().fn_ty.ret;
+                        let ret = self.fn_ty.ret;
                         if ret.is_ignore() || ret.is_indirect() {
                             bcx.ret_void()
                         } else {

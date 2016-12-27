@@ -3717,16 +3717,60 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                   self.check_expr_eq_type(expr, ret_ty);
               } else {
                   struct_span_err!(self.tcx.sess, expr.span, E0573,
-                                   "become statement outside of \
-                                   function body").emit()
+                                   "`become` statement outside of \
+                                    function body").emit();
+                  return tcx.types.never;
               }
+              let sess = &self.tcx.sess;
+              let check_rust_abi = |ty: &ty::TypeVariants<'tcx>| {
+                  match ty {
+                      &ty::TyFnDef(.., bare_type) | &ty::TyFnPtr(bare_type) => {
+                          match bare_type.abi {
+                              Abi::Rust|Abi::RustCall => (),
+                              _ => {
+                                  struct_span_err!(sess, expr.span, E0575,
+                                                   "Can only `become` a function \
+                                                    using the Rust ABI").emit()
+                              }
+                          }
+                      }
+                      &ty::TyError => (), // Don't emit a double error message
+                      _ => span_bug!(expr.span, "function with non-function type?"),
+                  }
+              };
 
               match expr.node {
-                  hir::ExprCall(..) | hir::ExprMethodCall(..) => (),
+                  hir::ExprCall(ref fun, _) => {
+                      // Largely taken from the code in librustc_mir/hair/cx/expr.rs
+                      if tcx.tables().is_method_call(expr.id) {
+                          // All closure trait impls are "rust-call"
+                          // which translates to LLVM fastcall
+                      } else {
+                          if let hir::ExprPath(hir::QPath::Resolved(_, ref path)) = fun.node {
+                              // Check for tuple-like ADT
+                              match path.def {
+                                  Def::VariantCtor(..) |
+                                  Def::StructCtor(_, CtorKind::Fn) => {
+                                      struct_span_err!(sess, expr.span, E0576,
+                                                       "`become` to tuple-like struct or \
+                                                        enum variant constructor").emit()
+                                  }
+                                  _ => (), // FIXME check_rust_abi(&tcx.tables().node_id_to_type(fun.id).sty),
+                                  // hits ICE "node_id_to_type: no type for node"
+                              }
+                          } else {
+                              //check_rust_abi(&tcx.tables().node_id_to_type(fun.id).sty)
+                          }
+                      }
+                  }
+                  hir::ExprMethodCall(..) => {
+                      check_rust_abi(&tcx.tables()
+                                         .method_map[&ty::MethodCall::expr(expr.id)].ty.sty)
+                  }
                   _ => {
                       struct_span_err!(self.tcx.sess, expr.span, E0574,
-                                       "become to something other than a \
-                                       method or function call").emit()
+                                       "become to something other than a method or function call")
+                          .emit()
                   }
               }
               tcx.types.never
