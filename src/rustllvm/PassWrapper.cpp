@@ -335,6 +335,10 @@ extern "C" LLVMTargetMachineRef LLVMRustCreateTargetMachine(
   }
 
   TargetOptions Options;
+
+  // Enable tail calls
+  Options.GuaranteedTailCallOpt = true;
+
 #if LLVM_VERSION_LE(3, 8)
   Options.PositionIndependentExecutable = PositionIndependentExecutable;
 #endif
