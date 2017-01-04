@@ -512,6 +512,14 @@ impl<'a, 'gcx, 'tcx> ExprUseVisitor<'a, 'gcx, 'tcx> {
             }
 
             hir::ExprBecome(ref expr) => {
+                match expr.node {
+                    hir::ExprCall(ref callee, ref arguments) => {
+                        self.walk_callee(expr, callee);
+                        self.consume_exprs(&arguments);
+                    }
+                    hir::ExprMethodCall(..) => unimplemented!(),
+                    _ => self.consume_expr(expr), // Typeck will error out
+                }
                 self.consume_expr(&expr);
             }
 

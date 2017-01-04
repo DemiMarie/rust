@@ -166,7 +166,7 @@ extern char *yytext;
 
 // RETURN needs to be lower-precedence than tokens that start
 // prefix_exprs
-%precedence RETURN
+%precedence RETURN BECOME
 
 %right '=' SHLEQ SHREQ MINUSEQ ANDEQ OREQ PLUSEQ STAREQ SLASHEQ CARETEQ PERCENTEQ
 %right LARROW
@@ -1316,6 +1316,7 @@ nonblock_expr
 | CONTINUE lifetime                                             { $$ = mk_node("ExprAgain", 1, $2); }
 | RETURN                                                        { $$ = mk_node("ExprRet", 0); }
 | RETURN expr                                                   { $$ = mk_node("ExprRet", 1, $2); }
+| BECOME expr                                                   { $$ = mk_node("ExprBecome", 1, $2); }
 | BREAK                                                         { $$ = mk_node("ExprBreak", 0); }
 | BREAK lifetime                                                { $$ = mk_node("ExprBreak", 1, $2); }
 | nonblock_expr LARROW expr                                     { $$ = mk_node("ExprInPlace", 2, $1, $3); }
@@ -1376,6 +1377,7 @@ expr
 | CONTINUE ident                                      { $$ = mk_node("ExprAgain", 1, $2); }
 | RETURN                                              { $$ = mk_node("ExprRet", 0); }
 | RETURN expr                                         { $$ = mk_node("ExprRet", 1, $2); }
+| BECOME expr                                         { $$ = mk_node("ExprRet", 1, $2); }
 | BREAK                                               { $$ = mk_node("ExprBreak", 0); }
 | BREAK ident                                         { $$ = mk_node("ExprBreak", 1, $2); }
 | expr LARROW expr                                    { $$ = mk_node("ExprInPlace", 2, $1, $3); }
@@ -1437,6 +1439,7 @@ nonparen_expr
 | CONTINUE ident                                      { $$ = mk_node("ExprAgain", 1, $2); }
 | RETURN                                              { $$ = mk_node("ExprRet", 0); }
 | RETURN expr                                         { $$ = mk_node("ExprRet", 1, $2); }
+| BECOME expr                                         { $$ = mk_node("ExprBecome", 1, $2); }
 | BREAK                                               { $$ = mk_node("ExprBreak", 0); }
 | BREAK ident                                         { $$ = mk_node("ExprBreak", 1, $2); }
 | nonparen_expr LARROW nonparen_expr                  { $$ = mk_node("ExprInPlace", 2, $1, $3); }
@@ -1498,6 +1501,7 @@ expr_nostruct
 | CONTINUE ident                                      { $$ = mk_node("ExprAgain", 1, $2); }
 | RETURN                                              { $$ = mk_node("ExprRet", 0); }
 | RETURN expr                                         { $$ = mk_node("ExprRet", 1, $2); }
+| BECOME expr                                         { $$ = mk_node("ExprBecome", 1, $2); }
 | BREAK                                               { $$ = mk_node("ExprBreak", 0); }
 | BREAK ident                                         { $$ = mk_node("ExprBreak", 1, $2); }
 | expr_nostruct LARROW expr_nostruct                  { $$ = mk_node("ExprInPlace", 2, $1, $3); }
