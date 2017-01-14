@@ -517,7 +517,8 @@ impl<'a, 'gcx, 'tcx> ExprUseVisitor<'a, 'gcx, 'tcx> {
                         self.walk_callee(expr, callee);
                         self.consume_exprs(&arguments);
                     }
-                    hir::ExprMethodCall(..) => unimplemented!(),
+                    hir::ExprMethodCall(.., ref args) =>
+                        self.consume_exprs(&args),
                     _ => self.consume_expr(expr), // Typeck will error out
                 }
                 self.consume_expr(&expr);

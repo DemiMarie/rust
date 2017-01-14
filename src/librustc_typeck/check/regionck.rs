@@ -770,7 +770,29 @@ impl<'a, 'gcx, 'tcx> Visitor<'gcx> for RegionCtxt<'a, 'gcx, 'tcx> {
                                                call_site_region);
                 intravisit::walk_expr(self, expr);
             }
-
+            hir::ExprBecome(ref become_expr) => {
+                let call_site_scope = self.call_site_scope;
+                debug!("visit_expr ExprBecome ret_expr.id {} call_site_scope: {:?}",
+                       become_expr.id, call_site_scope);
+                let call_site_region = self.tcx.mk_region(ty::ReScope(call_site_scope.unwrap()));
+                self.type_of_node_must_outlive(infer::CallReturn(become_expr.span),
+                                               become_expr.id,
+                                               call_site_region);
+                match become_expr.node {
+                    hir::ExprCall(ref callee, ref args) => {
+                        intravisit::walk_expr(self, callee);
+                        for i in args {
+                            intravisit::walk_expr(self, i)
+                        }
+                    }
+                    hir::ExprMethodCall(.., ref args) => {
+                        for i in args {
+                            intravisit::walk_expr(self, i)
+                        }
+                    }
+                    _ => span_bug!(become_expr.span, "`become` to a non-call should have failed typeck"),
+                }
+            }
             _ => {
                 intravisit::walk_expr(self, expr);
             }

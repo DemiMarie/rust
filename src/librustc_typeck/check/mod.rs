@@ -3738,11 +3738,10 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                       _ => span_bug!(expr.span, "function with non-function type?"),
                   }
               };
-
               match expr.node {
                   hir::ExprCall(ref fun, _) => {
                       // Largely taken from the code in librustc_mir/hair/cx/expr.rs
-                      if tcx.tables().is_method_call(expr.id) {
+                      if self.tables.borrow().is_method_call(expr.id) {
                           // All closure trait impls are "rust-call"
                           // which translates to LLVM fastcall
                       } else {
@@ -3755,17 +3754,16 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                                                        "`become` to tuple-like struct or \
                                                         enum variant constructor").emit()
                                   }
-                                  _ => (), // FIXME check_rust_abi(&tcx.tables().node_id_to_type(fun.id).sty),
-                                  // hits ICE "node_id_to_type: no type for node"
+                                  _ => check_rust_abi(&self.tables.borrow().node_id_to_type(fun.id).sty),
                               }
                           } else {
-                              //check_rust_abi(&tcx.tables().node_id_to_type(fun.id).sty)
+                              check_rust_abi(&self.tables.borrow().node_id_to_type(fun.id).sty)
                           }
                       }
                   }
                   hir::ExprMethodCall(..) => {
-                      check_rust_abi(&tcx.tables()
-                                         .method_map[&ty::MethodCall::expr(expr.id)].ty.sty)
+                      check_rust_abi(&self.tables.borrow()
+                                     .method_map[&ty::MethodCall::expr(expr.id)].ty.sty)
                   }
                   _ => {
                       struct_span_err!(self.tcx.sess, expr.span, E0574,

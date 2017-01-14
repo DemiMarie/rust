@@ -1377,7 +1377,7 @@ expr
 | CONTINUE ident                                      { $$ = mk_node("ExprAgain", 1, $2); }
 | RETURN                                              { $$ = mk_node("ExprRet", 0); }
 | RETURN expr                                         { $$ = mk_node("ExprRet", 1, $2); }
-| BECOME expr                                         { $$ = mk_node("ExprRet", 1, $2); }
+| BECOME expr                                         { $$ = mk_node("ExprBecome", 1, $2); }
 | BREAK                                               { $$ = mk_node("ExprBreak", 0); }
 | BREAK ident                                         { $$ = mk_node("ExprBreak", 1, $2); }
 | expr LARROW expr                                    { $$ = mk_node("ExprInPlace", 2, $1, $3); }
